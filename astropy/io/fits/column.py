@@ -1678,6 +1678,9 @@ class ColDefs(NotifierMixin):
                 # tables yet
                 new_column.disp = None
 
+        # Explicitly preserve bzero and bscale
+        new_column.bzero = column.bzero
+        new_column.bscale = column.bscale
         return new_column
 
     def __getattr__(self, name):
@@ -1842,6 +1845,18 @@ class ColDefs(NotifierMixin):
 
         # Listen for changes on the new column
         column._add_listener(self)
+
+        # Restore default bzero for unsigned integer column formats
+        if column.bzero is None and column.format in ("I", "J", "K"):
+            if column.format == "I":
+                column.bzero = 2**15
+            elif column.format == "J":
+                column.bzero = 2**31
+            elif column.format == "K":
+                column.bzero = 2**63
+
+        if column.bscale is None:
+            column.bscale = 1
 
         # If this ColDefs is being tracked by a Table, inform the
         # table that its data is now invalid.
