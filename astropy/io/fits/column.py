@@ -1833,6 +1833,21 @@ class ColDefs(NotifierMixin):
         # Ask the HDU object to load the data before we modify our columns
         self._notify("load_data")
 
+        # Restore default bzero for unsigned integer column formats
+        if column.bzero is None and column.format in ("I", "J", "K"):
+            if column.array is not None and np.issubdtype(
+                column.array.dtype, np.unsignedinteger
+            ):
+                if column.format == "I":
+                    column.bzero = 2**15
+                elif column.format == "J":
+                    column.bzero = 2**31
+                elif column.format == "K":
+                    column.bzero = 2**63
+
+        if column.bscale is None:
+            column.bscale = 1
+
         self._arrays.append(column.array)
         # Obliterate caches of certain things
         del self.dtype
